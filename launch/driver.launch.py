@@ -44,13 +44,13 @@ def generate_launch_description():
         #     launch_arguments=[("use_joint_state_publisher", "false")]   #关节状态有driver节点发布，不需要使用默认
         # ),
         # 包含 rviz2
-        Node(
-            package="rviz2",
-            executable="rviz2",
-            arguments=["-d", os.path.join(go2_driver_pkg, "rviz", "display.rviz")],
-            condition=IfCondition(LaunchConfiguration("use_rviz")),
-            parameters=[{'use_sim_time': use_sim_time}]
-        ),
+        # Node(
+        #     package="rviz2",
+        #     executable="rviz2",
+        #     arguments=["-d", os.path.join(go2_driver_pkg, "rviz", "display.rviz")],
+        #     condition=IfCondition(LaunchConfiguration("use_rviz")),
+        #     parameters=[{'use_sim_time': use_sim_time}]
+        # ),
     
         # 速度消息桥接
         # Node(
@@ -81,14 +81,8 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time,
                          'leg_sensor_enable': True,}],
         ),
-        Node(
-            package="go2_driver",
-            executable="cloud_time_sync",
-            condition=IfCondition(LaunchConfiguration("sync_utlidar_cloud_time")),
-            parameters=[{'use_sim_time': use_sim_time,
-                         'input_topic': "/utlidar/cloud",
-                         'output_topic': "/utlidar/cloud_sync"}],
-        ),
+
+
         # static tf imu_link -> rslidar
         Node(
             package="tf2_ros",
@@ -114,4 +108,3 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}]
         )
     ])
-
