@@ -62,6 +62,7 @@ private:
     void lowstate_callback(const unitree_go::msg::LowState::SharedPtr lowstate_msg)
     {
         auto current_time = this->now();
+
         if (imu_enable_) {
             // 创建 IMU 消息
             auto imu_msg = std::make_unique<sensor_msgs::msg::Imu>();
@@ -122,6 +123,9 @@ private:
                     leg_msg->foot_force[i] = (float)lowstate_msg->foot_force[i];
                 }
             }
+
+            leg_msg->imu_state = lowstate_msg->imu_state;
+
             leg_sensor_pub_->publish(std::move(leg_msg));
         }
     }

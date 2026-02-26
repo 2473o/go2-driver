@@ -23,7 +23,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LegSensor.msg"
-  DEPENDENCIES std_msgs
+  DEPENDENCIES std_msgs unitree_go
 )
 
 # add_executable(driver src/driver.cpp)

@@ -10,8 +10,8 @@ from launch.conditions import IfCondition
 
 def generate_launch_description():
 
-    go2_desc_pkg = get_package_share_directory("go2_description")
-    go2_driver_pkg = get_package_share_directory("go2_driver")
+    # go2_desc_pkg = get_package_share_directory("go2_description")
+    # go2_driver_pkg = get_package_share_directory("go2_driver")
 
     #为 rviz2 启动添加开关
     use_rviz = DeclareLaunchArgument(
@@ -25,17 +25,17 @@ def generate_launch_description():
         default_value='true',
         description='Use simulation (Gazebo) clock if true'
     )
-    sync_utlidar_cloud_time = DeclareLaunchArgument(
-        name="sync_utlidar_cloud_time",
-        default_value="true"
-    )
+    # sync_utlidar_cloud_time = DeclareLaunchArgument(
+    #     name="sync_utlidar_cloud_time",
+    #     default_value="true"
+    # )
 
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     return LaunchDescription([
         use_rviz,
         use_sim_time_arg,
-        sync_utlidar_cloud_time,
+        # sync_utlidar_cloud_time,
         # 机器人模型可视化
         # IncludeLaunchDescription(
         #     launch_description_source = PythonLaunchDescriptionSource(
@@ -81,8 +81,6 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time,
                          'leg_sensor_enable': True,}],
         ),
-
-
         # static tf imu_link -> rslidar
         Node(
             package="tf2_ros",
