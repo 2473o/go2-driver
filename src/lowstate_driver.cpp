@@ -1,5 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
-#include "unitree_go/msg/low_state.hpp"
+#include <unitree_go/msg/low_state.hpp>
 #include "sensor_msgs/msg/imu.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/LinearMath/Quaternion.h"
@@ -23,7 +23,7 @@ void declare_and_get_parameter(rclcpp::Node* node, std::string name, T& variable
 class LowStateToImuNode : public rclcpp::Node
 {
 public:
-    LowStateToImuNode() : Node("lowstate_to_imu_node")
+    LowStateToImuNode() : Node("lowstate_driver_node")
     {
 
         declare_and_get_parameter(this, "imu_enable", imu_enable_, true);

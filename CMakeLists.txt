@@ -27,7 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 # add_executable(driver src/driver.cpp)
-add_executable(odom_tf_node src/odom_tf.cpp)
+# add_executable(odom_tf_node src/odom_tf.cpp)
 add_executable(joint_state_pub_node src/joint_state_pub.cpp)
 # add_executable(footprint_to_link src/footprint_to_link.cpp)
 add_executable(lowstate_driver src/lowstate_driver.cpp)
@@ -104,7 +104,6 @@ target_link_libraries(lowstate_driver "${cpp_typesupport_target}")
 # )
 
 ament_target_dependencies(
-  cloud_time_sync
   "rclcpp"
   "sensor_msgs"
 )

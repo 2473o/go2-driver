@@ -22,20 +22,20 @@ def generate_launch_description():
     # 声明 use_sim_time 参数
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='true',
+        default_value='false',
         description='Use simulation (Gazebo) clock if true'
     )
-    # sync_utlidar_cloud_time = DeclareLaunchArgument(
-    #     name="sync_utlidar_cloud_time",
-    #     default_value="true"
-    # )
+    sync_utlidar_cloud_time = DeclareLaunchArgument(
+        name="sync_utlidar_cloud_time",
+        default_value="true"
+    )
 
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     return LaunchDescription([
         use_rviz,
         use_sim_time_arg,
-        # sync_utlidar_cloud_time,
+        sync_utlidar_cloud_time,
         # 机器人模型可视化
         # IncludeLaunchDescription(
         #     launch_description_source = PythonLaunchDescriptionSource(
@@ -51,7 +51,6 @@ def generate_launch_description():
         #     condition=IfCondition(LaunchConfiguration("use_rviz")),
         #     parameters=[{'use_sim_time': use_sim_time}]
         # ),
-    
         # 速度消息桥接
         # Node(
             # package="go2_twist_bridge",
@@ -69,11 +68,17 @@ def generate_launch_description():
         #     executable="odom_tf_node",
         #     parameters=[{'publish_odom': False}, {'publish_tf': False}, {'use_sim_time': use_sim_time}],
         # ),
-        # Node(
-        #     package="go2_driver",
-        #     executable="joint_state_pub_node",
-        #     parameters=[{'use_sim_time': use_sim_time}],
-        # ),
+        Node(
+            package="go2_driver",
+            executable="joint_state_pub_node",
+            parameters=[{'use_sim_time': use_sim_time}],
+        ),
+        Node(
+            package="go2_driver",
+            executable="cloud_time_sync",
+            condition=IfCondition(LaunchConfiguration("sync_utlidar_cloud_time")),
+            parameters=[{'use_sim_time': use_sim_time}],
+        ),
         # imu
         Node(
             package="go2_driver",
@@ -104,5 +109,12 @@ def generate_launch_description():
             executable="static_transform_publisher",
             arguments=["-0.02557", "0.0", "0.04232", "0.0", "0.0", "0.0", "base_link", "imu_link"],
             parameters=[{'use_sim_time': use_sim_time}]
-        )
+        ),
+        
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "base_link", "base_footprint"],
+            parameters=[{'use_sim_time': use_sim_time}]
+        ),
     ])
