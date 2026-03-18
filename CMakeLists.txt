@@ -33,6 +33,7 @@ add_executable(joint_state_pub_node src/joint_state_pub.cpp)
 add_executable(lowstate_driver src/lowstate_driver.cpp)
 # add_executable(sportstate_to_imu src/sportstate_to_imu.cpp)
 add_executable(cloud_time_sync src/cloud_time_sync.cpp)
+add_executable(head_camera src/head_camera.cpp)
 
 # target_include_directories(driver PUBLIC
 #   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -67,6 +68,18 @@ ament_target_dependencies(
   "sensor_msgs"
 )
 
+# OpenCV dependency for head_camera
+# set(OpenCV_DIR "/home/unitree/.local/opencv-4.12.0-cuda/lib/cmake/opencv4")
+# OpenCV dependency for head_camera
+set(OpenCV_DIR "/usr/lib/aarch64-linux-gnu/cmake/opencv4")
+find_package(OpenCV REQUIRED)
+ament_target_dependencies(
+  head_camera
+  "rclcpp"
+  "sensor_msgs"
+)
+target_link_libraries(head_camera ${OpenCV_LIBS})
+
 install(TARGETS 
   # driver
   # footprint_to_link
@@ -75,6 +88,7 @@ install(TARGETS
   joint_state_pub_node
   # sportstate_to_imu
   cloud_time_sync
+  head_camera
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME})

@@ -93,6 +93,24 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time,
                          'leg_sensor_enable': True,}],
         ),
+        # head_camera
+        Node(
+            package="go2_driver",
+            executable="head_camera",
+            parameters=[{
+                'pub_camera_raw_enable': True,
+                'pub_camera_compressed_enable': True,
+                'network_interface': 'eth0',
+                'gst_pipeline': (
+                    'udpsrc address=230.1.1.1 port=1720 multicast-iface=eth0 ! '
+                    'application/x-rtp,media=video,encoding-name=H264 ! rtph264depay ! '
+                    'h264parse ! nvv4l2decoder enable-max-performance=1 ! '
+                    'nvvidconv output-buffers=1 ! '
+                    'video/x-raw,format=BGRx,width=1280,height=720 ! '
+                    'videoconvert ! video/x-raw,format=BGR ! appsink drop=1 sync=false'
+                )
+            }],
+        ),
         # static tf imu_link -> rslidar
         Node(
             package="tf2_ros",
