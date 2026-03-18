@@ -40,42 +40,11 @@ add_executable(cloud_time_sync src/cloud_time_sync.cpp)
 # target_compile_features(driver PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 ament_target_dependencies(
-  odom_tf_node
-  "rclcpp"
-  "unitree_go"
-  "nav_msgs"
-  "tf2_ros"
-  "geometry_msgs"
-)
-
-ament_target_dependencies(
   joint_state_pub_node
   "rclcpp"
   "unitree_go"
   "sensor_msgs"
 )
-
-# ament_target_dependencies(
-#   driver
-#   "rclcpp"
-#   "unitree_go"
-#   "nav_msgs"
-#   "tf2"
-#   "tf2_ros"
-#   "geometry_msgs"
-#   "sensor_msgs"
-# )
-
-# ament_target_dependencies(
-#   footprint_to_link
-#   "rclcpp"
-#   "unitree_go"
-#   "nav_msgs"
-#   "tf2"
-#   "tf2_ros"
-#   "geometry_msgs"
-#   "sensor_msgs"
-# )
 
 ament_target_dependencies(
   lowstate_driver
@@ -88,22 +57,12 @@ ament_target_dependencies(
   "sensor_msgs"
   "std_msgs"
 )
-rosidl_get_typesupport_target(cpp_typesupport_target
+rosidl_target_interfaces(lowstate_driver
   ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(lowstate_driver "${cpp_typesupport_target}")
 
-# ament_target_dependencies(
-#   sportstate_to_imu
-#   "rclcpp"
-#   "unitree_go"
-#   "nav_msgs"
-#   "tf2"
-#   "tf2_ros"
-#   "geometry_msgs"
-#   "sensor_msgs"
-# )
 
 ament_target_dependencies(
+  cloud_time_sync
   "rclcpp"
   "sensor_msgs"
 )
@@ -112,7 +71,7 @@ install(TARGETS
   # driver
   # footprint_to_link
   lowstate_driver
-  odom_tf_node
+  # odom_tf_node
   joint_state_pub_node
   # sportstate_to_imu
   cloud_time_sync

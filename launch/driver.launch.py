@@ -29,6 +29,11 @@ def generate_launch_description():
         name="sync_utlidar_cloud_time",
         default_value="true"
     )
+    # 为 joint_state_pub_node 启动添加开关
+    joint_pub = DeclareLaunchArgument(
+        name="joint_pub",
+        default_value="false"
+    )
 
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -36,6 +41,7 @@ def generate_launch_description():
         use_rviz,
         use_sim_time_arg,
         sync_utlidar_cloud_time,
+        joint_pub,
         # 机器人模型可视化
         # IncludeLaunchDescription(
         #     launch_description_source = PythonLaunchDescriptionSource(
@@ -71,6 +77,7 @@ def generate_launch_description():
         Node(
             package="go2_driver",
             executable="joint_state_pub_node",
+            condition=IfCondition(LaunchConfiguration("joint_pub")),
             parameters=[{'use_sim_time': use_sim_time}],
         ),
         Node(
@@ -110,11 +117,11 @@ def generate_launch_description():
             arguments=["-0.02557", "0.0", "0.04232", "0.0", "0.0", "0.0", "base_link", "imu_link"],
             parameters=[{'use_sim_time': use_sim_time}]
         ),
-        
+        # static tf base_footprint -> base_link
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
-            arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "base_link", "base_footprint"],
+            arguments=["0.0", "0.0", "0.35", "0.0", "0.0", "0.0", "base_footprint", "base_link"],
             parameters=[{'use_sim_time': use_sim_time}]
         ),
     ])
