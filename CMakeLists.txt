@@ -20,6 +20,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(unitree_api REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LegSensor.msg"
@@ -31,9 +32,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 add_executable(joint_state_pub_node src/joint_state_pub.cpp)
 # add_executable(footprint_to_link src/footprint_to_link.cpp)
 add_executable(lowstate_driver src/lowstate_driver.cpp)
-# add_executable(sportstate_to_imu src/sportstate_to_imu.cpp)
 add_executable(cloud_time_sync src/cloud_time_sync.cpp)
 add_executable(head_camera src/head_camera.cpp)
+add_executable(sportstate_cmd_vel src/sportstate_cmd_vel.cpp)
 
 # target_include_directories(driver PUBLIC
 #   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -68,10 +69,10 @@ ament_target_dependencies(
   "sensor_msgs"
 )
 
-# OpenCV dependency for head_camera
-# set(OpenCV_DIR "/home/unitree/.local/opencv-4.12.0-cuda/lib/cmake/opencv4")
-# OpenCV dependency for head_camera
-set(OpenCV_DIR "/usr/lib/aarch64-linux-gnu/cmake/opencv4")
+# OpenCV dependency for head_camera cuda
+set(OpenCV_DIR "/home/unitree/.local/opencv-4.12.0-cuda/lib/cmake/opencv4")
+# OpenCV dependency for head_camera system
+# set(OpenCV_DIR "/usr/lib/aarch64-linux-gnu/cmake/opencv4")
 find_package(OpenCV REQUIRED)
 ament_target_dependencies(
   head_camera
@@ -79,6 +80,25 @@ ament_target_dependencies(
   "sensor_msgs"
 )
 target_link_libraries(head_camera ${OpenCV_LIBS})
+
+# Define 3rdparty path, allowing override via environment variable or CMake variable
+if(DEFINED ENV{UNITREE_3RDPARTY_PATH})
+  set(UNITREE_3RDPARTY_PATH $ENV{UNITREE_3RDPARTY_PATH})
+elseif(NOT DEFINED UNITREE_3RDPARTY_PATH)
+  set(UNITREE_3RDPARTY_PATH "/home/unitree/work_flow/3rdparty")
+endif()
+
+ament_target_dependencies(
+  sportstate_cmd_vel
+  "rclcpp"
+  "unitree_go"
+  "unitree_api"
+  "geometry_msgs"
+)
+target_include_directories(sportstate_cmd_vel PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  "${UNITREE_3RDPARTY_PATH}/include")
 
 install(TARGETS 
   # driver
