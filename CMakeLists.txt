@@ -1,0 +1,29 @@
+cmake_minimum_required(VERSION 3.10)
+project(go2_driver)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+if(POLICY CMP0148)
+  cmake_policy(SET CMP0148 OLD)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(unitree_go REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/LegSensor.msg"
+  DEPENDENCIES std_msgs unitree_go
+)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  set(ament_cmake_copyright_FOUND TRUE)
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()
