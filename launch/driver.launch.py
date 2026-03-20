@@ -42,6 +42,7 @@ def generate_launch_description():
         use_sim_time_arg,
         sync_utlidar_cloud_time,
         joint_pub,
+        
         # 机器人模型可视化
         # IncludeLaunchDescription(
         #     launch_description_source = PythonLaunchDescriptionSource(
@@ -100,6 +101,7 @@ def generate_launch_description():
             parameters=[{
                 'pub_camera_raw_enable': True,
                 'pub_camera_compressed_enable': True,
+                "pub_camera_topic": "/head_camera/image_raw",
                 'network_interface': 'eth0',
                 'gst_pipeline': (
                     'udpsrc address=230.1.1.1 port=1720 multicast-iface=eth0 ! '
@@ -110,6 +112,12 @@ def generate_launch_description():
                     'videoconvert ! video/x-raw,format=BGR ! appsink drop=1 sync=false'
                 )
             }],
+        ),
+        # cmd_vel to sport request
+        Node(
+            package="go2_driver",
+            executable="sportstate_cmd_vel",
+            parameters=[{'use_sim_time': use_sim_time}],
         ),
         # static tf imu_link -> rslidar
         Node(

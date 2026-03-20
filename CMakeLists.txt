@@ -109,6 +109,7 @@ install(TARGETS
   # sportstate_to_imu
   cloud_time_sync
   head_camera
+  sportstate_cmd_vel
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME})
