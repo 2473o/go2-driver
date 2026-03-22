@@ -1,4 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
+#include <algorithm>
+#include <limits>
 #include <unitree_go/msg/low_state.hpp>
 #include "sensor_msgs/msg/imu.hpp"
 #include "tf2_ros/transform_broadcaster.h"
@@ -107,8 +109,7 @@ private:
         if (leg_sensor_enable_) {
             // 发布 LegSensor 消息
             auto leg_msg = std::make_unique<go2_driver::msg::LegSensor>();
-            leg_msg->header.stamp = current_time;
-            leg_msg->header.frame_id = "base_link";
+            leg_msg->timestamp_ns = static_cast<decltype(leg_msg->timestamp_ns)>(current_time.nanoseconds());
 
             if (lowstate_msg->motor_state.size() >= 12) {
                 for(int i=0; i<12; ++i) {
@@ -120,11 +121,22 @@ private:
 
             if (lowstate_msg->foot_force.size() >= 4) {
                 for(int i=0; i<4; ++i) {
-                    leg_msg->foot_force[i] = (float)lowstate_msg->foot_force[i];
+                    const auto raw_force = lowstate_msg->foot_force[i];
+                    const auto clamped_force = std::clamp(
+                        static_cast<int>(raw_force),
+                        static_cast<int>(std::numeric_limits<decltype(leg_msg->foot_force[i])>::min()),
+                        static_cast<int>(std::numeric_limits<decltype(leg_msg->foot_force[i])>::max()));
+                    leg_msg->foot_force[i] = static_cast<decltype(leg_msg->foot_force[i])>(clamped_force);
                 }
             }
 
-            leg_msg->imu_state = lowstate_msg->imu_state;
+            for(int i = 0; i < 4; ++i) {
+                leg_msg->imu_quaternion[i] = lowstate_msg->imu_state.quaternion[i];
+            }
+            for(int i = 0; i < 3; ++i) {
+                leg_msg->imu_gyroscope[i] = lowstate_msg->imu_state.gyroscope[i];
+                leg_msg->imu_accelerometer[i] = lowstate_msg->imu_state.accelerometer[i];
+            }
 
             leg_sensor_pub_->publish(std::move(leg_msg));
         }
