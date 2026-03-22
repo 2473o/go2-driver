@@ -37,7 +37,7 @@ ament_target_dependencies(
   "std_msgs"
 )
 
-if(ROS_DISTRO MATCHES "foxy")
+if($ENV{ROS_DISTRO} MATCHES "foxy")
   rosidl_target_interfaces(lowstate_driver
     ${PROJECT_NAME} "rosidl_typesupport_cpp")
 else()
@@ -46,7 +46,7 @@ else()
   target_link_libraries(lowstate_driver "${cpp_typesupport_target}")
 endif()
 
-if(ROS_DISTRO MATCHES "foxy")
+if($ENV{ROS_DISTRO} MATCHES "foxy")
   if(DEFINED ENV{OpenCV_DIR})
     set(OpenCV_DIR $ENV{OpenCV_DIR})
   elseif(EXISTS "/home/unitree/.local/opencv-4.12.0-cuda/lib/cmake/opencv4")
