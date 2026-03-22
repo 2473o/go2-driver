@@ -1,33 +1,14 @@
 #include "rclcpp/rclcpp.hpp"
-#include <algorithm>
-#include <limits>
 #include <unitree_go/msg/low_state.hpp>
 #include "sensor_msgs/msg/imu.hpp"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "go2_driver/msg/leg_sensor.hpp"
-
-template<typename T>
-/**
- * @brief Declare and get a parameter from the ROS2 node.
- * @param node Pointer to the ROS2 node.
- * @param name Name of the parameter.
- * @param variable Reference to the variable where the parameter value will be stored.
- * @param default_value Default value to use if the parameter is not set.
- */
-void declare_and_get_parameter(rclcpp::Node* node, std::string name, T& variable, const T& default_value) {
-    node->declare_parameter<T>(name, default_value);
-    node->get_parameter(name, variable);
-}
-
+#include "go2_driver/utilities.hpp"
 
 class LowStateToImuNode : public rclcpp::Node
 {
 public:
     LowStateToImuNode() : Node("lowstate_driver_node")
     {
-
         declare_and_get_parameter(this, "imu_enable", imu_enable_, true);
         declare_and_get_parameter(this, "leg_sensor_enable", leg_sensor_enable_, false);
         declare_and_get_parameter(this, "imu_topic", imu_topic_, std::string("/imu"));
@@ -121,12 +102,7 @@ private:
 
             if (lowstate_msg->foot_force.size() >= 4) {
                 for(int i=0; i<4; ++i) {
-                    const auto raw_force = lowstate_msg->foot_force[i];
-                    const auto clamped_force = std::clamp(
-                        static_cast<int>(raw_force),
-                        static_cast<int>(std::numeric_limits<decltype(leg_msg->foot_force[i])>::min()),
-                        static_cast<int>(std::numeric_limits<decltype(leg_msg->foot_force[i])>::max()));
-                    leg_msg->foot_force[i] = static_cast<decltype(leg_msg->foot_force[i])>(clamped_force);
+                    leg_msg->foot_force[i] = lowstate_msg->foot_force[i];
                 }
             }
 
