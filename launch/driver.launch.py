@@ -96,6 +96,6 @@ def generate_launch_description():
         lowstate_driver,
         cmd_vel,
 
-        utlidar_compress,
-        rslidar_compress,
+        # utlidar_compress,
+        # rslidar_compress,
 ])
