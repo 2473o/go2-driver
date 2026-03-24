@@ -9,6 +9,12 @@ if(POLICY CMP0148)
   cmake_policy(SET CMP0148 OLD)
 endif()
 
+if(DEFINED ENV{UNITREE_3RDPARTY_PATH})
+  set(UNITREE_3RDPARTY_PATH $ENV{UNITREE_3RDPARTY_PATH})
+elseif(NOT DEFINED UNITREE_3RDPARTY_PATH)
+  set(UNITREE_3RDPARTY_PATH "/home/unitree/work_flow/3rdparty")
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(unitree_api REQUIRED)
@@ -16,21 +22,20 @@ find_package(unitree_go REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(unitree_api REQUIRED)
-
-include_directories(include)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LegSensor.msg"
   DEPENDENCIES std_msgs
 )
 
-add_executable(lowstate_driver src/lowstate_driver.cpp)
-add_executable(sport_driver src/sport_driver.cpp)
-
-
 include_directories(include)
+
+add_executable(lowstate_driver src/lowstate_driver.cpp)
+add_executable(head_camera src/head_camera.cpp)
+add_executable(sport_driver src/sport_driver.cpp)
 
 ament_target_dependencies(
   lowstate_driver
@@ -66,12 +71,6 @@ ament_target_dependencies(
 )
 target_link_libraries(head_camera ${OpenCV_LIBS})
 
-if(DEFINED ENV{UNITREE_3RDPARTY_PATH})
-  set(UNITREE_3RDPARTY_PATH $ENV{UNITREE_3RDPARTY_PATH})
-elseif(NOT DEFINED UNITREE_3RDPARTY_PATH)
-  set(UNITREE_3RDPARTY_PATH "/home/unitree/work_flow/3rdparty")
-endif()
-
 ament_target_dependencies(
   sport_driver
   "rclcpp"
@@ -81,13 +80,10 @@ ament_target_dependencies(
   "tf2_ros"
   "geometry_msgs"
 )
-rosidl_get_typesupport_target(cpp_typesupport_target
-  ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(lowstate_driver "${cpp_typesupport_target}")
-
 
 install(TARGETS
   lowstate_driver
+  head_camera
   sport_driver
   DESTINATION lib/${PROJECT_NAME})
 
