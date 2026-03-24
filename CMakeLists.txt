@@ -11,6 +11,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(unitree_api REQUIRED)
 find_package(unitree_go REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -18,14 +19,16 @@ find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(unitree_api REQUIRED)
 
+include_directories(include)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LegSensor.msg"
   DEPENDENCIES std_msgs
 )
 
 add_executable(lowstate_driver src/lowstate_driver.cpp)
-add_executable(head_camera src/head_camera.cpp)
-add_executable(sportstate_cmd_vel src/sportstate_cmd_vel.cpp)
+add_executable(sport_driver src/sport_driver.cpp)
+
 
 include_directories(include)
 
@@ -70,21 +73,22 @@ elseif(NOT DEFINED UNITREE_3RDPARTY_PATH)
 endif()
 
 ament_target_dependencies(
-  sportstate_cmd_vel
+  sport_driver
   "rclcpp"
-  "unitree_go"
   "unitree_api"
+  "unitree_go"
+  "tf2"
+  "tf2_ros"
   "geometry_msgs"
 )
-target_include_directories(sportstate_cmd_vel PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  "${UNITREE_3RDPARTY_PATH}/include")
+rosidl_get_typesupport_target(cpp_typesupport_target
+  ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(lowstate_driver "${cpp_typesupport_target}")
+
 
 install(TARGETS
   lowstate_driver
-  head_camera
-  sportstate_cmd_vel
+  sport_driver
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/ DESTINATION include)

@@ -5,3 +5,7 @@ log/
 
 tf_tree/*
 !tf_tree/sub_tf.sh
+
+
+
+__pycache__/

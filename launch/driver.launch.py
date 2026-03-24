@@ -10,24 +10,11 @@ from launch.conditions import IfCondition
 
 def generate_launch_description():
 
-    use_rviz = DeclareLaunchArgument(
-        name="use_rviz",
-        default_value="false"
-    )
-
-    use_sim_time_arg = DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='false',
-        description='Use simulation (Gazebo) clock if true'
-    )
-    use_sim_time = LaunchConfiguration('use_sim_time')
-
     # lowstate driver, pub imu and leg sensor
     lowstate_driver =   Node(
             package="go2_driver",
             executable="lowstate_driver",
-            parameters=[{'use_sim_time': use_sim_time,
-                         'imu_enable': False,
+            parameters=[{'imu_enable': False,
                          'leg_sensor_enable': True,}],
     )
 
@@ -52,19 +39,18 @@ def generate_launch_description():
     )
 
     # cmd_vel to sport request
-    cmd_vel = Node(
+    # cmd_vel = Node(
+    #         package="go2_driver",
+    #         executable="sportstate_cmd_vel"
+    #     )
+    sport_driver = Node(
             package="go2_driver",
-            executable="sportstate_cmd_vel",
-            parameters=[{'use_sim_time': use_sim_time}],
+            executable="sportstate_driver"
         )
     
 
     return LaunchDescription([
-        use_rviz,
-        use_sim_time_arg,
-
         # camera,
         lowstate_driver,
-        cmd_vel,
-
+        sport_driver,
 ])

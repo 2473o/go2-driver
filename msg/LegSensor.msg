@@ -10,10 +10,10 @@ float32[12] dq
 # 12个关节的力矩
 float32[12] tau
 
-# 4个足端的接触力
+# 4个足端的接触力 (从 float32 改回与 LowState 一致的 int16) [FL, FR, RL, RR]，有效范围 -32768~32767
 int16[4] foot_force
 
-# --- 展开 IMU 数据 (移除嵌套结构) ---
+# --- 展开的 IMU 数据 (移除嵌套结构) ---
 float32[4] imu_quaternion
 float32[3] imu_gyroscope
 float32[3] imu_accelerometer
