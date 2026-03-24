@@ -58,44 +58,13 @@ def generate_launch_description():
             parameters=[{'use_sim_time': use_sim_time}],
         )
     
-    # utlidar 点云压缩节点
-    utlidar_compress = Node(
-            package="point_cloud_transport",
-            executable="republish",
-            name="utlidar_compression",
-            arguments=[
-                'draco',
-                '--ros-args',
-                '-r', 'in:=/utlidar/cloud',
-                '-r', 'out:=/utlidar/cloud/compressed',
-                '-p', 'use_sim_time:=' + use_sim_time,
-            ],
-            output='screen'
-        )
-
-    # rslidar 点云压缩节点
-    rslidar_compress = Node(
-        package='point_cloud_transport',
-        executable='republish',
-        name='rslidar_compression',
-        arguments=[
-            'draco',
-            '--ros-args',
-            '-r', 'in:=/rslidar_points',
-            '-r', 'out:=/rslidar_points/compressed',
-            '-p', 'use_sim_time:=' + use_sim_time,
-            ],
-            output='screen',
-        )
 
     return LaunchDescription([
         use_rviz,
         use_sim_time_arg,
 
-        camera,
+        # camera,
         lowstate_driver,
         cmd_vel,
 
-        # utlidar_compress,
-        # rslidar_compress,
 ])
