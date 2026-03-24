@@ -19,15 +19,15 @@ public:
         sport_client_ = std::make_shared<SportClient>();
 
         // 创建互斥回调组，支持多线程、多核处理，满足规则5
-        auto cmd_cb_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-        auto tf_cb_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-        auto timer_cb_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        cmd_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        tf_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        timer_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
         rclcpp::SubscriptionOptions cmd_sub_opts;
-        cmd_sub_opts.callback_group = cmd_cb_group;
+        cmd_sub_opts.callback_group = cmd_cb_group_;
 
         rclcpp::SubscriptionOptions tf_sub_opts;
-        tf_sub_opts.callback_group = tf_cb_group;
+        tf_sub_opts.callback_group = tf_cb_group_;
 
         // 订阅速度命令
         cmd_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
@@ -45,7 +45,7 @@ public:
             std::bind(&SportClientCmdVel::state_cb, this, std::placeholders::_1), tf_sub_opts);
         
         tf_timer_ = this->create_wall_timer(
-            100ms, std::bind(&SportClientCmdVel::timer_cb, this), timer_cb_group);
+            100ms, std::bind(&SportClientCmdVel::timer_cb, this), timer_cb_group_);
             
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
     }
@@ -103,6 +103,9 @@ private:
     double body_height_;
     
     // ROS接口
+    rclcpp::CallbackGroup::SharedPtr cmd_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr tf_cb_group_;
+    rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
     rclcpp::Publisher<unitree_api::msg::Request>::SharedPtr sport_pub_;
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr tf_sub_;

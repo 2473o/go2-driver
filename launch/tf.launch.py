@@ -8,7 +8,7 @@ def generate_launch_description():
     # 声明 use_sim_time 参数
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='true',
+        default_value='false',
         description='Use simulation (Gazebo) clock if true'
     )
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -25,7 +25,7 @@ def generate_launch_description():
             # arguments=["0.1710", "0.0", "0.0908", "0.0", "0.2269", "0.0", "imu_link", "rslidar"],
             parameters=[{'use_sim_time': use_sim_time}]
         ),
-        # static tf imu_link -> utlidar # 垃圾雷达
+        # static tf imu_link -> utlidar # 垃圾雷达会丢点云
         # Node(
         #     package="tf2_ros",
         #     executable="static_transform_publisher",

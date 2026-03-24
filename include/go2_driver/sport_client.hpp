@@ -6,7 +6,6 @@
 #include "unitree_api/msg/request.hpp"
 
 
-#pragma pack(1)
 constexpr int32_t ROBOT_SPORT_API_ID_DAMP = 1001;
 constexpr int32_t ROBOT_SPORT_API_ID_BALANCESTAND = 1002;
 constexpr int32_t ROBOT_SPORT_API_ID_STOPMOVE = 1003;
@@ -40,6 +39,7 @@ constexpr int32_t ROBOT_SPORT_API_ID_FRONTFLIP = 1030;
 constexpr int32_t ROBOT_SPORT_API_ID_FRONTJUMP = 1031;
 constexpr int32_t ROBOT_SPORT_API_ID_FRONTPOUNCE = 1032;
 
+#pragma pack(push, 1)
 typedef struct
 {
     float timeFromStart;
@@ -50,6 +50,7 @@ typedef struct
     float vy;
     float vyaw;
 } PathPoint;
+#pragma pack(pop)
 
 class SportClient
 {

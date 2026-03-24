@@ -38,14 +38,9 @@ def generate_launch_description():
             }],
     )
 
-    # cmd_vel to sport request
-    # cmd_vel = Node(
-    #         package="go2_driver",
-    #         executable="sportstate_cmd_vel"
-    #     )
     sport_driver = Node(
             package="go2_driver",
-            executable="sportstate_driver"
+            executable="sport_driver"
         )
     
 

@@ -31,7 +31,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES std_msgs
 )
 
-include_directories(include)
+include_directories(
+	include
+	${UNITREE_3RDPARTY_PATH}/include
+)
 
 add_executable(lowstate_driver src/lowstate_driver.cpp)
 add_executable(head_camera src/head_camera.cpp)
