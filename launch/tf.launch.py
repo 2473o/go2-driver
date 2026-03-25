@@ -25,14 +25,20 @@ def generate_launch_description():
             # arguments=["0.1710", "0.0", "0.0908", "0.0", "0.2269", "0.0", "imu_link", "rslidar"],
             parameters=[{'use_sim_time': use_sim_time}]
         ),
-        # static tf imu_link -> utlidar # 垃圾雷达会丢点云
-        # Node(
-        #     package="tf2_ros",
-        #     executable="static_transform_publisher",
-        #     arguments=["0.315020", "0.0", "-0.089145", "0.0", "0.99134054", "0.0", "0.13131614", "imu_link", "utlidar_lidar"],
-        #     parameters=[{'use_sim_time': use_sim_time}]
-        # ),
+        # static tf base_link -> utlidar # 垃圾雷达会丢点云
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            arguments=["0.28945", "0.0", "-0.046825", "0.0", "2.8782","0.0", "base_link", "utlidar_lidar"],
+            parameters=[{'use_sim_time': use_sim_time}]
+        ),
         # static tf base_link -> imu_link
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            arguments=["-0.02557", "0.0", "0.04232", "0.0", "0.0", "0.0", "base_link", "imu_link"],
+            parameters=[{'use_sim_time': use_sim_time}]
+        )
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
