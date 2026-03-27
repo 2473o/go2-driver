@@ -25,7 +25,7 @@ def generate_launch_description():
             # arguments=["0.1710", "0.0", "0.0908", "0.0", "0.2269", "0.0", "imu_link", "rslidar"],
             parameters=[{'use_sim_time': use_sim_time}]
         ),
-        # static tf base_link -> utlidar # 垃圾雷达会丢点云
+        # static tf base_link -> utlidar # 垃圾雷达会掉点云 建议用深度相机
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
@@ -38,11 +38,11 @@ def generate_launch_description():
             executable="static_transform_publisher",
             arguments=["-0.02557", "0.0", "0.04232", "0.0", "0.0", "0.0", "base_link", "imu_link"],
             parameters=[{'use_sim_time': use_sim_time}]
-        )
+        ),
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
-            arguments=["-0.02557", "0.0", "0.04232", "0.0", "0.0", "0.0", "base_link", "imu_link"],
+            arguments=["0.34463", "0.01128", "0.09685", "0.0", "0.0", "0.0", "base_link", "realsense_cam_link"],
             parameters=[{'use_sim_time': use_sim_time}]
         )
     ])
