@@ -206,6 +206,12 @@ install(DIRECTORY include/ DESTINATION include)
 
 install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME})
 
+####################### Python Scripts
+install(PROGRAMS
+  scripts/multi_static_tf.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

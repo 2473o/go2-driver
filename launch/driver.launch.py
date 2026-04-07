@@ -39,8 +39,14 @@ def generate_launch_description():
             executable="sport_driver"
     )
 
+    tf_static = Node(
+        package="go2_driver",
+        executable="multi_static_tf.py"
+    )
+
     return LaunchDescription([
         # camera,
         lowstate_driver,
         sport_driver,
+        tf_static
 ])
