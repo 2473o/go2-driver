@@ -29,7 +29,7 @@ def generate_launch_description():
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
-            arguments=["0.28945", "0.0", "-0.046825", "0.0", "2.8782","0.0", "base_link", "utlidar_lidar"],
+            arguments=["0.28945", "0.0", "-0.046825", "0.0", "3.141592653589793", "0.0", "base_link", "utlidar_lidar"],
             parameters=[{'use_sim_time': use_sim_time}]
         ),
         # static tf base_link -> imu_link
