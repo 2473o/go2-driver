@@ -60,17 +60,6 @@ private:
                           msg->linear.y,
                           msg->angular.z);
         sport_pub_->publish(req);
-        
-        if (msg->linear.x == 0 && msg->linear.y == 0 && msg->angular.z == 0) {
-            stopRobot();
-        }
-    }
-
-    // 停止机器人
-    void stopRobot() {
-        unitree_api::msg::Request req;
-        sport_client_->StopMove(req);
-        sport_pub_->publish(req);
     }
 
     // 处理机器人状态信息，更新高度
