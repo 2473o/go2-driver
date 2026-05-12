@@ -47,7 +47,8 @@ def generate_launch_description():
     sport_driver = Node(
             package="go2_driver",
             executable="sport_driver",
-            condition=IfCondition(EqualsSubstitution(sim, 'false')),
+            parameters=[{'use_sim_time': sim, 'odom': False}],
+            # condition=IfCondition(EqualsSubstitution(sim, 'false')),
     )
 
     tf_static = Node(
@@ -56,10 +57,17 @@ def generate_launch_description():
         parameters=[{'use_sim_time': sim}],
     )
 
+    odom_to_path = Node(
+        package="go2_driver",
+        executable="odom_to_path.py",
+        parameters=[{'use_sim_time': sim}],
+    )
+
     return LaunchDescription([
         sim_arg,
         # camera,
         lowstate_driver,
         sport_driver,
-        tf_static
+        tf_static,
+        odom_to_path,
 ])
