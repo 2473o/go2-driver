@@ -49,7 +49,7 @@ class MultiStaticTfPublisher(Node):
         add_tf(0.1710, 0.0, 0.0908, 0.0, 0.0, 0.0, "imu_link", "rslidar")
         add_tf(-0.02557, 0.0, 0.04232, 0.0, 0.0, 0.0, "base_link", "imu_link")
         add_tf(0.34463, 0.01128, 0.09685, 0.0, 0.0, 0.0, "base_link", "realsense_cam_link")
-        add_tf(0.28945, 0.0, -0.046825, 0.0, 3.141592653589793, 0.0, "base_link", "utlidar_lidar")
+        # add_tf(0.28945, 0.0, -0.046825, 0.0, 3.141592653589793, 0.0, "base_link", "utlidar_lidar")
 
         # 将所有的 TransformStamped 包装进一个 TFMessage 中一次性发布
         tf_msg = TFMessage()

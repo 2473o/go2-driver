@@ -26,6 +26,7 @@ public:
         // 初始化运动客户端
         sport_client_ = std::make_shared<SportClient>();
 
+        // 多线程处理
         cmd_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
         rclcpp::SubscriptionOptions cmd_sub_opts;
@@ -50,10 +51,13 @@ public:
             tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
             tf_cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
             rclcpp::SubscriptionOptions tf_sub_opts;
+
             tf_sub_opts.callback_group = tf_cb_group_;
+
             tf_sub_ = this->create_subscription<unitree_go::msg::SportModeState>(
-                "/sportmodestate", rclcpp::QoS(10),
+                "/sportmodestate", rclcpp::QoS(10).best_effort(),
                 std::bind(&SportClientCmdVel::state_cb, this, std::placeholders::_1), tf_sub_opts);
         }
     }
