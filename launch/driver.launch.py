@@ -27,8 +27,8 @@ def generate_launch_description():
     lowstate_driver =   Node(
             package="go2_driver",
             executable="lowstate_driver",
-            parameters=[{'imu_enable': False,
-                         'leg_sensor_enable': True,
+            parameters=[{'imu_enable': True,
+                         'leg_sensor_enable': False,
                          'use_sim_time': sim_,}],
     )
     # head camera

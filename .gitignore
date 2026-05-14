@@ -10,3 +10,5 @@ tf_tree/*
 
 __pycache__/
 go2_perception/
+
+lib/unitree_sdk2-main/

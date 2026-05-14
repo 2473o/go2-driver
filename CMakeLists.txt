@@ -25,6 +25,13 @@ find_package(tf2_ros REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+set(UNITREE_SDK2_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/lib/unitree_sdk2-main" CACHE PATH "unitree_sdk2 install prefix")
+if(EXISTS "${UNITREE_SDK2_ROOT}/lib/cmake/unitree_sdk2/unitree_sdk2Config.cmake")
+  find_package(unitree_sdk2 REQUIRED CONFIG PATHS "${UNITREE_SDK2_ROOT}" NO_DEFAULT_PATH)
+else()
+  find_package(unitree_sdk2 REQUIRED CONFIG)
+endif()
+
 
 # go2_driver/msg/LegSensor.msg
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -103,6 +110,16 @@ ament_target_dependencies(
   "geometry_msgs"
   "nav_msgs"
 )
+
+# Go2 motion-control service reset
+add_executable(mcf_reset src/mcf_reset.cpp)
+target_link_libraries(mcf_reset unitree_sdk2)
+set_property(TARGET mcf_reset APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--disable-new-dtags")
+if(EXISTS "${UNITREE_SDK2_ROOT}/lib")
+  set_target_properties(mcf_reset PROPERTIES
+    BUILD_RPATH "${UNITREE_SDK2_ROOT}/lib"
+    INSTALL_RPATH "${UNITREE_SDK2_ROOT}/lib")
+endif()
 
 # for pointcloud 2 scan
 # (pointcloud deps are conditionally found when BUILD_POINTCLOUD=ON)
@@ -216,6 +233,7 @@ endif()
 install(TARGETS
   lowstate_driver
   sport_driver
+  mcf_reset
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/ DESTINATION include)
