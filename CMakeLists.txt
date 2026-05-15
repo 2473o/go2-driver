@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(go2_driver)
 
-option(BUILD_POINTCLOUD "Build pointcloud processing targets" OFF) # only build on Jetpack 5.x
+option(BUILD_POINTCLOUD "Build pointcloud processing targets" ON) # only build on Jetpack 5.x
 
 option(BUILD_HEAD_CAMERA "Build head_camera target" OFF)  # OpenCV depended on Jetpack 5.x
 
@@ -131,9 +131,16 @@ if(BUILD_POINTCLOUD)
   find_package(tf2_sensor_msgs REQUIRED)
 
   ## Pointcloud Begin
-  set(CUPCL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/cuPCL")
-  set(CUPCL_FILTER_INCLUDE_DIR "${CUPCL_ROOT}/cuFilter")
-  set(CUPCL_FILTER_LIBRARY "${CUPCL_ROOT}/cuFilter/lib/libcudafilter.so")
+  set(GO2_ENV_CUPCL_ROOT "$ENV{CUPCL_PATH}")
+  set(CUPCL_ROOT "" CACHE PATH "Path to cuPCL root. Overrides the CUPCL_PATH environment variable.")
+  set(GO2_CUPCL_ROOT "${CUPCL_ROOT}")
+  if(NOT GO2_CUPCL_ROOT)
+    if(GO2_ENV_CUPCL_ROOT)
+      set(GO2_CUPCL_ROOT "${GO2_ENV_CUPCL_ROOT}")
+    endif()
+  endif()
+  set(CUPCL_FILTER_INCLUDE_DIR "${GO2_CUPCL_ROOT}/cuFilter")
+  set(CUPCL_FILTER_LIBRARY "${GO2_CUPCL_ROOT}/cuFilter/lib/libcudafilter.so")
 
   find_path(CUPCL_CUDA_INCLUDE_DIR
     cuda_runtime.h
@@ -188,8 +195,8 @@ if(BUILD_POINTCLOUD)
     )
     target_link_libraries(pointcloud_to_laserscan cupcl_filter cupcl_cudart)
     set_target_properties(pointcloud_to_laserscan PROPERTIES
-      BUILD_RPATH "${CUPCL_ROOT}/cuFilter/lib"
-      INSTALL_RPATH "$ORIGIN;$ORIGIN/../../lib;${CUPCL_ROOT}/cuFilter/lib"
+      BUILD_RPATH "${GO2_CUPCL_ROOT}/cuFilter/lib"
+      INSTALL_RPATH "$ORIGIN;$ORIGIN/../../lib;${GO2_CUPCL_ROOT}/cuFilter/lib"
     )
     install(FILES "${CUPCL_FILTER_LIBRARY}" DESTINATION lib)
     message(STATUS "cuPCL enabled with ${CUPCL_FILTER_LIBRARY}")

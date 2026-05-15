@@ -43,10 +43,12 @@
 
 #include <cmath>
 #include <chrono>
+#include <algorithm>
 #include <cstring>
 #include <functional>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <utility>
@@ -69,7 +71,6 @@ namespace
 {
 
 constexpr std::size_t kCupclPointStride = 4;
-constexpr std::size_t kCupclPointStepBytes = sizeof(float) * kCupclPointStride;
 
 struct PointFieldOffsets
 {
@@ -83,6 +84,17 @@ struct PointFieldOffsets
       y != std::numeric_limits<std::size_t>::max() &&
       z != std::numeric_limits<std::size_t>::max();
   }
+};
+
+struct ScanProjectionParams
+{
+  float min_height;
+  float max_height;
+  float range_min_sq;
+  float range_max_sq;
+  float angle_min;
+  float angle_max;
+  float inv_angle_increment;
 };
 
 std::size_t getPointCount(const sensor_msgs::msg::PointCloud2 & cloud)
@@ -118,37 +130,35 @@ float readFloatField(const uint8_t * point_data, std::size_t offset)
 void updateLaserScanFromPoint(
   float x, float y, float z,
   sensor_msgs::msg::LaserScan & scan_msg,
-  double min_height, double max_height,
-  double range_min_sq, double range_max_sq)
+  const ScanProjectionParams & params)
 {
   if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
     return;
   }
 
-  if (z < min_height || z > max_height) {
+  if (z < params.min_height || z > params.max_height) {
     return;
   }
 
-  const double range_sq = static_cast<double>(x) * static_cast<double>(x) +
-    static_cast<double>(y) * static_cast<double>(y);
-  if (range_sq < range_min_sq || range_sq > range_max_sq) {
+  const float range_sq = x * x + y * y;
+  if (range_sq < params.range_min_sq || range_sq > params.range_max_sq) {
     return;
   }
 
-  const double angle = std::atan2(y, x);
-  if (angle < scan_msg.angle_min || angle > scan_msg.angle_max) {
+  const float angle = std::atan2(y, x);
+  if (angle < params.angle_min || angle > params.angle_max) {
     return;
   }
 
   const std::size_t index = static_cast<std::size_t>(
-    (angle - scan_msg.angle_min) / scan_msg.angle_increment);
+    (angle - params.angle_min) * params.inv_angle_increment);
   if (index >= scan_msg.ranges.size()) {
     return;
   }
 
-  const float range = static_cast<float>(std::sqrt(range_sq));
-  if (range < scan_msg.ranges[index]) {
-    scan_msg.ranges[index] = range;
+  const float current_range = scan_msg.ranges[index];
+  if (range_sq < current_range * current_range) {
+    scan_msg.ranges[index] = std::sqrt(range_sq);
   }
 }
 
@@ -156,38 +166,38 @@ void accumulateLaserScanFromCloud(
   const sensor_msgs::msg::PointCloud2 & cloud,
   const PointFieldOffsets & offsets,
   sensor_msgs::msg::LaserScan & scan_msg,
-  double min_height, double max_height,
-  double range_min_sq, double range_max_sq)
+  const ScanProjectionParams & params,
+  std::size_t point_sample_step)
 {
   const std::size_t point_count = getPointCount(cloud);
   const uint8_t * point_data = cloud.data.data();
+  point_sample_step = std::max<std::size_t>(point_sample_step, 1);
 
-  for (std::size_t index = 0; index < point_count; ++index) {
+  for (std::size_t index = 0; index < point_count; index += point_sample_step) {
     const uint8_t * point_ptr = point_data + index * cloud.point_step;
     updateLaserScanFromPoint(
       readFloatField(point_ptr, offsets.x),
       readFloatField(point_ptr, offsets.y),
       readFloatField(point_ptr, offsets.z),
-      scan_msg, min_height, max_height, range_min_sq, range_max_sq);
+      scan_msg, params);
   }
 }
 
 void accumulateLaserScanFromFloat4(
   const std::vector<float> & points,
   sensor_msgs::msg::LaserScan & scan_msg,
-  double min_height, double max_height,
-  double range_min_sq, double range_max_sq)
+  const ScanProjectionParams & params,
+  std::size_t point_sample_step)
 {
-  for (std::size_t index = 0; index + 3 < points.size(); index += kCupclPointStride) {
+  point_sample_step = std::max<std::size_t>(point_sample_step, 1);
+  const std::size_t data_step = kCupclPointStride * point_sample_step;
+  for (std::size_t index = 0; index + 3 < points.size(); index += data_step) {
     updateLaserScanFromPoint(
       points[index],
       points[index + 1],
       points[index + 2],
       scan_msg,
-      min_height,
-      max_height,
-      range_min_sq,
-      range_max_sq);
+      params);
   }
 }
 
@@ -202,8 +212,8 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
   // achievable by the associated executor
   // input_queue_size_ = this->declare_parameter(
   //   "queue_size", static_cast<int>(std::thread::hardware_concurrency()));
-  input_queue_size_ = this->declare_parameter(
-    "queue_size", 10);           // 小项目，精度要求不高，调高几个队列
+  input_queue_size_ = std::max<int>(
+    1, static_cast<int>(this->declare_parameter<int>("queue_size", 1)));
   min_height_ = this->declare_parameter("min_height", std::numeric_limits<double>::min());
   max_height_ = this->declare_parameter("max_height", std::numeric_limits<double>::max());
   angle_min_ = this->declare_parameter("angle_min", -M_PI);
@@ -214,6 +224,9 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
   range_max_ = this->declare_parameter("range_max", std::numeric_limits<double>::max());
   inf_epsilon_ = this->declare_parameter("inf_epsilon", 1.0);
   use_inf_ = this->declare_parameter("use_inf", true);
+  qos_reliable_ = this->declare_parameter("qos_reliable", false);
+  max_cloud_age_ = this->declare_parameter("max_cloud_age", 0.3);
+  max_points_per_scan_ = this->declare_parameter<int>("max_points_per_scan", 80000);
 #ifdef GO2_PERCEPTION_HAS_CUPCL
   use_cupcl_ = this->declare_parameter("use_cupcl", true);
 #else
@@ -233,14 +246,14 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
         this->get_logger(),
         "cuPCL 不可用，原因: %s，自动回退到 CPU 点云投影",
         init_error.c_str());
+    } else {
+      RCLCPP_INFO(this->get_logger(), "cuPCL 已启用，点云高度/体素过滤将使用 GPU");
     }
+  } else {
+    RCLCPP_INFO(this->get_logger(), "cuPCL 参数关闭，使用 CPU 点云投影");
   }
 
-  rclcpp::QoS qos = rclcpp::SensorDataQoS();
-  qos.reliable();
-  qos.durability_volatile();
-
-  pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", qos);
+  pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", getSensorQos());
 
   using std::placeholders::_1;
   // if pointcloud target frame specified, we need to filter by transform availability
@@ -275,9 +288,7 @@ PointCloudToLaserScanNode::~PointCloudToLaserScanNode()
 void PointCloudToLaserScanNode::subscriptionListenerThreadLoop()
 {
   rclcpp::Context::SharedPtr context = this->get_node_base_interface()->get_context();
-  rclcpp::SensorDataQoS qos;
-  qos.keep_last(input_queue_size_);
-  qos.reliable();
+  rclcpp::QoS qos = getSensorQos();
   sub_.subscribe(this, "cloud_in", qos.get_rmw_qos_profile());
 
   const std::chrono::milliseconds timeout(100);
@@ -288,16 +299,54 @@ void PointCloudToLaserScanNode::subscriptionListenerThreadLoop()
   sub_.unsubscribe();
 }
 
+rclcpp::QoS PointCloudToLaserScanNode::getSensorQos() const
+{
+  rclcpp::QoS qos(rclcpp::KeepLast(static_cast<std::size_t>(input_queue_size_)));
+  if (qos_reliable_) {
+    qos.reliable();
+  } else {
+    qos.best_effort();
+  }
+  qos.durability_volatile();
+  return qos;
+}
+
+std::size_t PointCloudToLaserScanNode::getPointSampleStep(std::size_t point_count) const
+{
+  if (max_points_per_scan_ <= 0 ||
+    point_count <= static_cast<std::size_t>(max_points_per_scan_))
+  {
+    return 1;
+  }
+  return (point_count + static_cast<std::size_t>(max_points_per_scan_) - 1) /
+    static_cast<std::size_t>(max_points_per_scan_);
+}
+
 void PointCloudToLaserScanNode::cloudCallback(
   sensor_msgs::msg::PointCloud2::ConstSharedPtr cloud_msg)
 {
+  if (max_cloud_age_ > 0.0 &&
+    (cloud_msg->header.stamp.sec != 0 || cloud_msg->header.stamp.nanosec != 0))
+  {
+    const double age = (this->now() - rclcpp::Time(cloud_msg->header.stamp)).seconds();
+    if (age > max_cloud_age_) {
+      RCLCPP_WARN_THROTTLE(
+        this->get_logger(),
+        *this->get_clock(),
+        2000,
+        "点云已滞后 %.3fs，丢弃旧帧以避免 LaserScan 延迟继续累积",
+        age);
+      return;
+    }
+  }
+
   // build laserscan output
   auto scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();
   scan_msg->header = cloud_msg->header;
 
   // // 将时间戳修改为当前时间
   // scan_msg->header.stamp = now();
-  
+
   if (!target_frame_.empty()) {
     scan_msg->header.frame_id = target_frame_;
   }
@@ -310,8 +359,17 @@ void PointCloudToLaserScanNode::cloudCallback(
   scan_msg->range_min = range_min_;
   scan_msg->range_max = range_max_;
 
+  if (angle_increment_ <= 0.0 || angle_max_ <= angle_min_) {
+    RCLCPP_ERROR_THROTTLE(
+      this->get_logger(),
+      *this->get_clock(),
+      2000,
+      "LaserScan 角度参数非法，无法转换点云");
+    return;
+  }
+
   // determine amount of rays to create
-  uint32_t ranges_size = std::ceil(
+  const std::size_t ranges_size = std::ceil(
     (scan_msg->angle_max - scan_msg->angle_min) / scan_msg->angle_increment);
 
   // determine if laserscan rays with no obstacle data will evaluate to infinity or max_range
@@ -333,26 +391,31 @@ void PointCloudToLaserScanNode::cloudCallback(
     }
   }
 
-  const double range_min_sq = range_min_ * range_min_;
-  const double range_max_sq = range_max_ * range_max_;
+  const ScanProjectionParams projection_params{
+    static_cast<float>(min_height_),
+    static_cast<float>(max_height_),
+    static_cast<float>(range_min_ * range_min_),
+    static_cast<float>(range_max_ * range_max_),
+    static_cast<float>(angle_min_),
+    static_cast<float>(angle_max_),
+    1.0f / static_cast<float>(angle_increment_)};
 
   if (use_cupcl_ && cupcl_context_ != nullptr) {
-    std::vector<float> filtered_points;
+    std::lock_guard<std::mutex> cupcl_lock(cupcl_mutex_);
+    cupcl_filtered_points_.clear();
     const double active_voxel_leaf_size = cupcl_voxel_disabled_ ? 0.0 : voxel_leaf_size_;
     if (cupcl_context_->filter(
         *cloud_msg,
         min_height_,
         max_height_,
         active_voxel_leaf_size,
-        filtered_points))
+        cupcl_filtered_points_))
     {
       accumulateLaserScanFromFloat4(
-        filtered_points,
+        cupcl_filtered_points_,
         *scan_msg,
-        min_height_,
-        max_height_,
-        range_min_sq,
-        range_max_sq);
+        projection_params,
+        getPointSampleStep(cupcl_filtered_points_.size() / kCupclPointStride));
       pub_->publish(std::move(scan_msg));
       return;
     }
@@ -364,7 +427,7 @@ void PointCloudToLaserScanNode::cloudCallback(
           min_height_,
           max_height_,
           0.0,
-          filtered_points))
+          cupcl_filtered_points_))
       {
         cupcl_voxel_disabled_ = true;
         RCLCPP_WARN(
@@ -372,12 +435,10 @@ void PointCloudToLaserScanNode::cloudCallback(
           "cuPCL VoxelGrid 失败(%s)，已自动切换为 GPU PassThrough 模式",
           first_error.c_str());
         accumulateLaserScanFromFloat4(
-          filtered_points,
+          cupcl_filtered_points_,
           *scan_msg,
-          min_height_,
-          max_height_,
-          range_min_sq,
-          range_max_sq);
+          projection_params,
+          getPointSampleStep(cupcl_filtered_points_.size() / kCupclPointStride));
         pub_->publish(std::move(scan_msg));
         return;
       }
@@ -405,10 +466,8 @@ void PointCloudToLaserScanNode::cloudCallback(
     *cloud_msg,
     offsets,
     *scan_msg,
-    min_height_,
-    max_height_,
-    range_min_sq,
-    range_max_sq);
+    projection_params,
+    getPointSampleStep(getPointCount(*cloud_msg)));
 
   pub_->publish(std::move(scan_msg));
 }

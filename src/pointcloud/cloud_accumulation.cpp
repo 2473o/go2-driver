@@ -1,6 +1,6 @@
 /**
  * @brief 点云累加节点
- * License: https://github.com/andy-zhuo-02/go2_ros2_toolbox/blob/main/LICENSE
+ * MIT Licens: https://github.com/andy-zhuo-02/go2_ros2_toolbox/blob/main/LICENSE
  */
 
 #include "rclcpp/rclcpp.hpp"

@@ -49,12 +49,7 @@ public:
   ~CupclContext()
   {
 #ifdef GO2_PERCEPTION_HAS_CUPCL
-    if (device_input_ != nullptr) {
-      cudaFree(device_input_);
-    }
-    if (device_output_ != nullptr) {
-      cudaFree(device_output_);
-    }
+    releaseBuffers();
     if (stream_ != nullptr) {
       cudaStreamDestroy(stream_);
     }
@@ -91,6 +86,14 @@ public:
     }
 
     const std::size_t point_count = getPointCount(cloud);
+    if (point_count == 0) {
+      filtered_points.clear();
+      return true;
+    }
+    if (point_count > std::numeric_limits<unsigned int>::max()) {
+      last_error_ = "point cloud has too many points for cuPCL";
+      return false;
+    }
     if (!ensureCapacity(point_count)) {
       return false;
     }
@@ -224,45 +227,26 @@ private:
       return true;
     }
 
-    if (device_input_ != nullptr) {
-      cudaFree(device_input_);
-      device_input_ = nullptr;
-    }
-    if (device_output_ != nullptr) {
-      cudaFree(device_output_);
-      device_output_ = nullptr;
+    if (point_count > std::numeric_limits<std::size_t>::max() / kPointStepBytes) {
+      last_error_ = "point cloud is too large for cuPCL buffer allocation";
+      return false;
     }
 
+    releaseBuffers();
+
     const std::size_t byte_size = point_count * kPointStepBytes;
-    const cudaError_t input_alloc_status = cudaMallocManaged(
-      &device_input_, byte_size, cudaMemAttachHost);
+    const cudaError_t input_alloc_status = cudaMalloc(
+      reinterpret_cast<void **>(&device_input_), byte_size);
     if (input_alloc_status != cudaSuccess) {
       last_error_ = cudaGetErrorString(input_alloc_status);
       return false;
     }
-    const cudaError_t input_attach_status = cudaStreamAttachMemAsync(stream_, device_input_);
-    if (input_attach_status != cudaSuccess) {
-      cudaFree(device_input_);
-      device_input_ = nullptr;
-      last_error_ = cudaGetErrorString(input_attach_status);
-      return false;
-    }
 
-    const cudaError_t output_alloc_status = cudaMallocManaged(
-      &device_output_, byte_size, cudaMemAttachHost);
+    const cudaError_t output_alloc_status = cudaMalloc(
+      reinterpret_cast<void **>(&device_output_), byte_size);
     if (output_alloc_status != cudaSuccess) {
-      cudaFree(device_input_);
-      device_input_ = nullptr;
+      releaseBuffers();
       last_error_ = cudaGetErrorString(output_alloc_status);
-      return false;
-    }
-    const cudaError_t output_attach_status = cudaStreamAttachMemAsync(stream_, device_output_);
-    if (output_attach_status != cudaSuccess) {
-      cudaFree(device_input_);
-      device_input_ = nullptr;
-      cudaFree(device_output_);
-      device_output_ = nullptr;
-      last_error_ = cudaGetErrorString(output_attach_status);
       return false;
     }
 
@@ -295,11 +279,6 @@ private:
         last_error_ = "cudaMemcpyAsync host->device failed (direct path)";
         return false;
       }
-      const cudaError_t sync_status = cudaStreamSynchronize(stream_);
-      if (sync_status != cudaSuccess) {
-        last_error_ = cudaGetErrorString(sync_status);
-        return false;
-      }
       return true;
     }
 
@@ -325,11 +304,6 @@ private:
       return false;
     }
 
-    const cudaError_t sync_status = cudaStreamSynchronize(stream_);
-    if (sync_status != cudaSuccess) {
-      last_error_ = cudaGetErrorString(sync_status);
-      return false;
-    }
     return true;
 #else
     (void)cloud;
@@ -340,6 +314,19 @@ private:
   }
 
 #ifdef GO2_PERCEPTION_HAS_CUPCL
+  void releaseBuffers()
+  {
+    if (device_input_ != nullptr) {
+      cudaFree(device_input_);
+      device_input_ = nullptr;
+    }
+    if (device_output_ != nullptr) {
+      cudaFree(device_output_);
+      device_output_ = nullptr;
+    }
+    capacity_ = 0;
+  }
+
   cudaStream_t stream_{nullptr};
   std::unique_ptr<cudaFilter> filter_;
   float * device_input_{nullptr};

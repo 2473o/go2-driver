@@ -1,3 +1,8 @@
 [submodule "lib/src/unitree_sdk2-main"]
 	path = lib/src/unitree_sdk2-main
 	url = https://github.com/unitreerobotics/unitree_sdk2
+
+[submodule "lib/cuPCL"]
+	path = lib/cuPCL
+	url = https://github.com/NVIDIA-AI-IOT/cuPCL.git
+	branch = x86_64_lib

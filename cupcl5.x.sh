@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
+SCRIPT_ROOT=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
+
 # jetpack 5.x cuPCL path
-CUPCL_PATH=/home/unitree/ros2_ws/3rdparty/cuPCL
+# export CUPCL_PATH=/home/unitree/ros2_ws/3rdparty/cuPCL
+
+# X86_64 Library Path
+export CUPCL_PATH=$SCRIPT_ROOT/lib/cuPCL
+
 CUPCL_MODULES=(cuCluster cuFilter cuICP cuNDT cuOctree cuSegmentation)
 
 for module in "${CUPCL_MODULES[@]}"; do

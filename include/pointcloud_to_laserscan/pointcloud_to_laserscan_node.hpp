@@ -43,8 +43,10 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "message_filters/subscriber.h"
 #include "tf2_ros/buffer.h"
@@ -82,6 +84,8 @@ private:
   void robotPoseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg);
 
   void subscriptionListenerThreadLoop();
+  rclcpp::QoS getSensorQos() const;
+  std::size_t getPointSampleStep(std::size_t point_count) const;
 
   std::unique_ptr<tf2_ros::Buffer> tf2_;
   std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
@@ -104,11 +108,16 @@ private:
     range_max_;
   bool use_inf_;
   double inf_epsilon_;
+  bool qos_reliable_;
+  double max_cloud_age_;
+  int max_points_per_scan_;
   bool use_cupcl_;
   double voxel_leaf_size_;
   bool cupcl_retry_without_voxel_;
   bool cupcl_voxel_disabled_;
   std::unique_ptr<CupclContext> cupcl_context_;
+  std::mutex cupcl_mutex_;
+  std::vector<float> cupcl_filtered_points_;
 };
 
 }  // namespace pointcloud_to_laserscan
