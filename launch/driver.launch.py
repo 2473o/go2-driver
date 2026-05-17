@@ -72,12 +72,14 @@ def generate_launch_description():
         cmd=[sys.executable, '-u', os.path.join(pkg_lib_dir, 'multi_static_tf.py'),
              '--ros-args', '-p', ['use_sim_time:=', sim_]],
         output='screen',
+        name='multi_static_tf',
     )
 
     odom_to_path = ExecuteProcess(
         cmd=[sys.executable, '-u', os.path.join(pkg_lib_dir, 'odom_to_path.py'),
              '--ros-args', '-p', ['use_sim_time:=', sim_]],
         output='screen',
+        name='odom_to_path',
         condition=IfCondition(
             PythonExpression([
                  "'", odom_, "'", " == 'true'"
