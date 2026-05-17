@@ -38,6 +38,10 @@
  * Author: Paul Bovbel
  */
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
+
 #include "pointcloud_to_laserscan/pointcloud_to_laserscan_node.hpp"
 #include "pointcloud_to_laserscan/cupcl_impl.hpp"
 
@@ -244,13 +248,13 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
       use_cupcl_ = false;
       RCLCPP_WARN(
         this->get_logger(),
-        "cuPCL 不可用，原因: %s，自动回退到 CPU 点云投影",
+        "cuPCL unavailable: %s, falling back to CPU pointcloud projection",
         init_error.c_str());
     } else {
-      RCLCPP_INFO(this->get_logger(), "cuPCL 已启用，点云高度/体素过滤将使用 GPU");
+      RCLCPP_INFO(this->get_logger(), "cuPCL enabled, using GPU for pointcloud height/voxel filtering");
     }
   } else {
-    RCLCPP_INFO(this->get_logger(), "cuPCL 参数关闭，使用 CPU 点云投影");
+    RCLCPP_INFO(this->get_logger(), "cuPCL disabled by parameter, using CPU pointcloud projection");
   }
 
   pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan", getSensorQos());
@@ -334,7 +338,7 @@ void PointCloudToLaserScanNode::cloudCallback(
         this->get_logger(),
         *this->get_clock(),
         2000,
-        "点云已滞后 %.3fs，丢弃旧帧以避免 LaserScan 延迟继续累积",
+        "Pointcloud delayed by %.3fs, dropping old frame to prevent LaserScan latency accumulation",
         age);
       return;
     }
@@ -344,7 +348,7 @@ void PointCloudToLaserScanNode::cloudCallback(
   auto scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();
   scan_msg->header = cloud_msg->header;
 
-  // // 将时间戳修改为当前时间
+  // // Override timestamp with current time
   // scan_msg->header.stamp = now();
 
   if (!target_frame_.empty()) {
@@ -364,7 +368,7 @@ void PointCloudToLaserScanNode::cloudCallback(
       this->get_logger(),
       *this->get_clock(),
       2000,
-      "LaserScan 角度参数非法，无法转换点云");
+      "LaserScan angle parameters invalid, cannot convert pointcloud");
     return;
   }
 
@@ -432,7 +436,7 @@ void PointCloudToLaserScanNode::cloudCallback(
         cupcl_voxel_disabled_ = true;
         RCLCPP_WARN(
           this->get_logger(),
-          "cuPCL VoxelGrid 失败(%s)，已自动切换为 GPU PassThrough 模式",
+          "cuPCL VoxelGrid failed(%s), auto-switched to GPU PassThrough mode",
           first_error.c_str());
         accumulateLaserScanFromFloat4(
           cupcl_filtered_points_,
@@ -448,7 +452,7 @@ void PointCloudToLaserScanNode::cloudCallback(
       this->get_logger(),
       *this->get_clock(),
       2000,
-      "cuPCL 过滤失败: %s，当前帧回退到 CPU 路径",
+      "cuPCL filter failed: %s, current frame falling back to CPU path",
       cupcl_context_->lastError().c_str());
   }
 
@@ -458,7 +462,7 @@ void PointCloudToLaserScanNode::cloudCallback(
       this->get_logger(),
       *this->get_clock(),
       2000,
-      "点云缺少 float32 x/y/z 字段，无法转换 LaserScan");
+      "Pointcloud missing float32 x/y/z fields, cannot convert to LaserScan");
     return;
   }
 

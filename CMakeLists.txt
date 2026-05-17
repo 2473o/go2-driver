@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(go2_driver)
 
-option(BUILD_POINTCLOUD "Build pointcloud processing targets" ON) # only build on Jetpack 5.x
+option(BUILD_POINTCLOUD "Build pointcloud processing targets" OFF) # only build on Jetpack 5.x
 
 option(BUILD_HEAD_CAMERA "Build head_camera target" OFF)  # OpenCV depended on Jetpack 5.x
 
@@ -26,10 +26,12 @@ find_package(nav_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 set(UNITREE_SDK2_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/lib/unitree_sdk2-main" CACHE PATH "unitree_sdk2 install prefix")
-if(EXISTS "${UNITREE_SDK2_ROOT}/lib/cmake/unitree_sdk2/unitree_sdk2Config.cmake")
-  find_package(unitree_sdk2 REQUIRED CONFIG PATHS "${UNITREE_SDK2_ROOT}" NO_DEFAULT_PATH)
-else()
-  find_package(unitree_sdk2 REQUIRED CONFIG)
+if(NOT WIN32)
+  if(EXISTS "${UNITREE_SDK2_ROOT}/lib/cmake/unitree_sdk2/unitree_sdk2Config.cmake")
+    find_package(unitree_sdk2 REQUIRED CONFIG PATHS "${UNITREE_SDK2_ROOT}" NO_DEFAULT_PATH)
+  else()
+    find_package(unitree_sdk2 REQUIRED CONFIG)
+  endif()
 endif()
 
 
@@ -112,13 +114,15 @@ ament_target_dependencies(
 )
 
 # Go2 motion-control service reset
-add_executable(mcf_reset src/mcf_reset.cpp)
-target_link_libraries(mcf_reset unitree_sdk2)
-set_property(TARGET mcf_reset APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--disable-new-dtags")
-if(EXISTS "${UNITREE_SDK2_ROOT}/lib")
-  set_target_properties(mcf_reset PROPERTIES
-    BUILD_RPATH "${UNITREE_SDK2_ROOT}/lib"
-    INSTALL_RPATH "${UNITREE_SDK2_ROOT}/lib")
+if(NOT WIN32)
+  add_executable(mcf_reset src/mcf_reset.cpp)
+  target_link_libraries(mcf_reset unitree_sdk2)
+  set_property(TARGET mcf_reset APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--disable-new-dtags")
+  if(EXISTS "${UNITREE_SDK2_ROOT}/lib")
+    set_target_properties(mcf_reset PROPERTIES
+      BUILD_RPATH "${UNITREE_SDK2_ROOT}/lib"
+      INSTALL_RPATH "${UNITREE_SDK2_ROOT}/lib")
+  endif()
 endif()
 
 # for pointcloud 2 scan
@@ -240,8 +244,13 @@ endif()
 install(TARGETS
   lowstate_driver
   sport_driver
-  mcf_reset
   DESTINATION lib/${PROJECT_NAME})
+
+if(NOT WIN32)
+  install(TARGETS
+    mcf_reset
+    DESTINATION lib/${PROJECT_NAME})
+endif()
 
 install(DIRECTORY include/ DESTINATION include)
 

@@ -1,11 +1,13 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.conditions import IfCondition
+from ament_index_python.packages import get_package_prefix
 
 import math
 import os
+import sys
 
 def generate_launch_description():
     sim_ = LaunchConfiguration('sim')
@@ -31,6 +33,7 @@ def generate_launch_description():
                          'leg_sensor_enable': False,
                          'use_sim_time': sim_,}],
     )
+    
     # head camera
     camera =  Node(
             package="go2_driver",
@@ -63,17 +66,18 @@ def generate_launch_description():
             parameters=[{'use_sim_time': sim_, 'odom': odom_}],
     )
 
-    tf_static = Node(
-        package="go2_driver",
-        executable="multi_static_tf.py",
-        parameters=[{'use_sim_time': sim_}],
+    pkg_lib_dir = os.path.join(get_package_prefix('go2_driver'), 'lib', 'go2_driver')
+
+    tf_static = ExecuteProcess(
+        cmd=[sys.executable, '-u', os.path.join(pkg_lib_dir, 'multi_static_tf.py'),
+             '--ros-args', '-p', ['use_sim_time:=', sim_]],
+        output='screen',
     )
 
-    odom_to_path = Node(
-        package="go2_driver",
-        executable="odom_to_path.py",
-        parameters=[{'use_sim_time': sim_}],
-        # condition=IfCondition(EqualsSubstitution(odom_, 'true')), # foxy 不存在
+    odom_to_path = ExecuteProcess(
+        cmd=[sys.executable, '-u', os.path.join(pkg_lib_dir, 'odom_to_path.py'),
+             '--ros-args', '-p', ['use_sim_time:=', sim_]],
+        output='screen',
         condition=IfCondition(
             PythonExpression([
                  "'", odom_, "'", " == 'true'"
